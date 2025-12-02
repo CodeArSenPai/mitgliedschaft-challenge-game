@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Score-Datenbank - Mitgliedschafts-Challenge</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #e94560;
+            font-size: 2rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4ecca3, #45b393);
+            color: #1a1a2e;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(78, 204, 163, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            color: #4ecca3;
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        .player-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .player-table thead {
+            background: rgba(233, 69, 96, 0.3);
+        }
+
+        .player-table th {
+            padding: 15px;
+            text-align: left;
+            color: #fff;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .player-table td {
+            padding: 15px;
+            color: #fff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .player-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .player-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .player-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .score-value {
+            color: #4ecca3;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .attempts-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .attempts-complete {
+            background: rgba(233, 69, 96, 0.3);
+            color: #ff6b6b;
+        }
+
+        .attempts-pending {
+            background: rgba(255, 217, 61, 0.3);
+            color: #ffd93d;
+        }
+
+        .status-complete {
+            color: #4ecca3;
+            font-weight: bold;
+        }
+
+        .status-pending {
+            color: #ffd93d;
+            font-weight: bold;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .empty-state-text {
+            font-size: 1.2rem;
+        }
+
+        .export-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .export-section h2 {
+            color: #4ecca3;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px 15px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .player-table {
+                font-size: 0.9rem;
+            }
+
+            .player-table th,
+            .player-table td {
+                padding: 10px 8px;
+            }
+        }
+    </style>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 SCORE-DATENBANK</h1>
+            <p>Mitgliedschafts-Challenge - Alle Spielergebnisse</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="refreshScores()">🔄 Aktualisieren</button>
+            <button class="btn btn-secondary" onclick="exportToTxt()">💾 Als TXT exportieren</button>
+            <button class="btn btn-secondary" onclick="window.location.href='Spiel2.html'">🎮 Zum Spiel</button>
+        </div>
+
+        <div class="stats-grid" id="stats-grid">
+        </div>
+
+        <div id="scores-container">
+        </div>
+
+        <div class="export-section">
+            <h2>📥 Export-Optionen</h2>
+            <div class="export-buttons">
+                <button class="btn btn-secondary" onclick="exportToTxt()">📄 Als Textdatei (.txt)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SCORE_DB_KEY = 'mitgliedschaft_challenge_scores';
+        const DOCUMENT_ID = 'mitgliedschaft_challenge';
+
+        // Supabase-Initialisierung
+        let supabaseClient = null;
+        let supabaseInitialized = false;
+
+        function initSupabase() {
+            if (typeof supabase === 'undefined' || !window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+                console.log('Supabase nicht konfiguriert, verwende localStorage');
+                return false;
+            }
+
+            try {
+                supabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                supabaseInitialized = true;
+                console.log('Supabase initialisiert');
+                return true;
+            } catch (e) {
+                console.error('Fehler bei Supabase-Initialisierung:', e);
+                return false;
+            }
+        }
+
+        // Initialisiere Supabase beim Laden
+        initSupabase();
+
+        // Fallback zu localStorage wenn Supabase nicht verfügbar
+        async function getScoreDatabase() {
+            if (supabaseInitialized && supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('scores')
+                        .select('*')
+                        .eq('id', DOCUMENT_ID)
+                        .single();
+
+                    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+                        console.error('Fehler beim Laden von Supabase:', error);
+                        // Fallback zu localStorage
+                        return getLocalStorageDatabase();
+                    }
+
+                    if (data) {
+                        return {
+                            players: data.players || {},
+                            lastUpdate: data.last_update || null
+                        };
+                    }
+
+                    // Keine Daten vorhanden, erstelle leere Struktur
+                    return { players: {}, lastUpdate: null };
+                } catch (e) {
+                    console.error('Fehler beim Laden:', e);
+                    return getLocalStorageDatabase();
+                }
+            } else {
+                return getLocalStorageDatabase();
+            }
+        }
+
+        function getLocalStorageDatabase() {
+            try {
+                const data = localStorage.getItem(SCORE_DB_KEY);
+                return data ? JSON.parse(data) : { players: {}, lastUpdate: null };
+            } catch (e) {
+                return { players: {}, lastUpdate: null };
+            }
+        }
+
+        function saveScoreDatabase(dbData) {
+            const dataToSave = {
+                id: DOCUMENT_ID,
+                players: dbData.players || {},
+                last_update: new Date().toISOString()
+            };
+
+            if (supabaseInitialized && supabaseClient) {
+                supabaseClient
+                    .from('scores')
+                    .upsert(dataToSave, { onConflict: 'id' })
+                    .then(({ error }) => {
+                        if (error) {
+                            console.error('Fehler beim Speichern in Supabase:', error);
+                            // Fallback zu localStorage
+                            saveToLocalStorage(dbData);
+                        }
+                    })
+                    .catch(e => {
+                        console.error('Fehler beim Speichern:', e);
+                        saveToLocalStorage(dbData);
+                    });
+            } else {
+                saveToLocalStorage(dbData);
+            }
+        }
+
+        function saveToLocalStorage(dbData) {
+            try {
+                dbData.lastUpdate = new Date().toISOString();
+                localStorage.setItem(SCORE_DB_KEY, JSON.stringify(dbData));
+            } catch (e) {
+                console.error('Fehler beim Speichern in localStorage:', e);
+            }
+        }
+
+        async function getPlayerAttempts(playerName) {
+            const db = await getScoreDatabase();
+            if (!db.players || !db.players[playerName]) {
+                return [];
+            }
+            return db.players[playerName].attempts || [];
+        }
+
+        async function getPlayerStats(playerName) {
+            const attempts = await getPlayerAttempts(playerName);
+            const completedAttempts = attempts.filter(a => a.completed);
+            const abortedAttempts = attempts.filter(a => a.aborted || !a.completed);
+            const bestScore = completedAttempts.length > 0 
+                ? Math.max(...completedAttempts.map(a => a.score))
+                : 0;
+            const averageScore = completedAttempts.length > 0
+                ? Math.round(completedAttempts.reduce((sum, a) => sum + a.score, 0) / completedAttempts.length)
+                : 0;
+
+            return {
+                totalAttempts: attempts.length,
+                completedAttempts: completedAttempts.length,
+                abortedAttempts: abortedAttempts.length,
+                bestScore: bestScore,
+                averageScore: averageScore,
+                isComplete: completedAttempts.length >= 2
+            };
+        }
+
+        async function getAllPlayers() {
+            const db = await getScoreDatabase();
+            return db.players ? Object.keys(db.players) : [];
+        }
+
+        async function refreshScores() {
+            await displayScores();
+        }
+
+        async function displayScores() {
+            const db = await getScoreDatabase();
+            const players = await getAllPlayers();
+            const container = document.getElementById('scores-container');
+            const statsGrid = document.getElementById('stats-grid');
+
+            if (players.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div class="empty-state-text">Noch keine Spielergebnisse vorhanden</div>
+                        <p style="margin-top: 10px; font-size: 0.9rem;">Sobald Spieler ihre Versuche absolviert haben, werden die Ergebnisse hier angezeigt.</p>
+                    </div>
+                `;
+                statsGrid.innerHTML = '';
+                return;
+            }
+
+            const allAttemptsPromises = players.map(name => getPlayerAttempts(name));
+            const allAttemptsArrays = await Promise.all(allAttemptsPromises);
+            const allAttempts = allAttemptsArrays.flat();
+            const completedAttempts = allAttempts.filter(a => a.completed);
+            const abortedAttempts = allAttempts.filter(a => a.aborted || !a.completed);
+            const totalPlayers = players.length;
+            
+            const playerStatsPromises = players.map(name => getPlayerStats(name));
+            const playerStatsArray = await Promise.all(playerStatsPromises);
+            const completePlayers = playerStatsArray.filter(stats => stats.isComplete).length;
+
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${totalPlayers}</div>
+                    <div class="stat-label">Spieler</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${completePlayers}</div>
+                    <div class="stat-label">Abgeschlossen</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${allAttempts.length}</div>
+                    <div class="stat-label">Gesamt Versuche</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${abortedAttempts.length}</div>
+                    <div class="stat-label">Abgebrochen</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${completedAttempts.length > 0 ? Math.max(...completedAttempts.map(a => a.score)) : 0}</div>
+                    <div class="stat-label">Bester Score</div>
+                </div>
+            `;
+
+            const playersWithStatsPromises = players.map(async (name) => ({
+                name: name,
+                stats: await getPlayerStats(name),
+                attempts: await getPlayerAttempts(name)
+            }));
+            const playersWithStats = await Promise.all(playersWithStatsPromises);
+
+            playersWithStats.sort((a, b) => {
+                if (a.stats.isComplete !== b.stats.isComplete) {
+                    return b.stats.isComplete ? 1 : -1;
+                }
+                return b.stats.bestScore - a.stats.bestScore;
+            });
+
+            let tableHTML = `
+                <table class="player-table">
+                    <thead>
+                        <tr>
+                            <th>Spieler</th>
+                            <th>Versuche</th>
+                            <th>Abgebrochen</th>
+                            <th>Bester Score</th>
+                            <th>Durchschnitt</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            playersWithStats.forEach(player => {
+                const attemptsDisplay = player.stats.totalAttempts > 0
+                    ? `${player.stats.completedAttempts}/${player.stats.totalAttempts}`
+                    : '0/0';
+                const abortedDisplay = player.stats.abortedAttempts > 0
+                    ? `<span style="color: #e94560; font-weight: bold;">⚠️ ${player.stats.abortedAttempts}</span>`
+                    : '-';
+
+                tableHTML += `
+                    <tr>
+                        <td class="player-name">👤 ${player.name}</td>
+                        <td>
+                            <span class="attempts-badge ${player.stats.isComplete ? 'attempts-complete' : 'attempts-pending'}">
+                                ${attemptsDisplay}
+                            </span>
+                        </td>
+                        <td>${abortedDisplay}</td>
+                        <td class="score-value">${player.stats.bestScore > 0 ? player.stats.bestScore : '-'}</td>
+                        <td class="score-value">${player.stats.averageScore > 0 ? player.stats.averageScore : '-'}</td>
+                        <td class="${player.stats.isComplete ? 'status-complete' : 'status-pending'}">
+                            ${player.stats.isComplete ? '✅ Abgeschlossen' : '⏳ In Bearbeitung'}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+
+            if (completePlayers > 0) {
+                const sortedByScore = playersWithStats
+                    .filter(p => p.stats.isComplete)
+                    .sort((a, b) => b.stats.bestScore - a.stats.bestScore);
+
+                tableHTML += `
+                    <h2 style="color: #4ecca3; margin-top: 30px; margin-bottom: 15px;">🏆 Finale Rangliste</h2>
+                    <table class="player-table">
+                        <thead>
+                            <tr>
+                                <th>Platz</th>
+                                <th>Spieler</th>
+                                <th>Bester Score</th>
+                                <th>Durchschnitt</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                sortedByScore.forEach((player, index) => {
+                    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+                    tableHTML += `
+                        <tr>
+                            <td><strong>${index + 1}. ${medal}</strong></td>
+                            <td class="player-name">👤 ${player.name}</td>
+                            <td class="score-value">${player.stats.bestScore}</td>
+                            <td class="score-value">${player.stats.averageScore}</td>
+                        </tr>
+                    `;
+                });
+
+                tableHTML += `
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            container.innerHTML = tableHTML;
+        }
+
+        async function exportToTxt() {
+            const db = await getScoreDatabase();
+            const players = await getAllPlayers();
+
+            if (players.length === 0) {
+                alert('Keine Daten zum Exportieren vorhanden.');
+                return;
+            }
+
+            let text = '=== MITGLIEDSCHAFTS-CHALLENGE SCORE-DATENBANK ===\n\n';
+            text += `Exportiert am: ${new Date().toLocaleString('de-DE')}\n`;
+            text += `Letzte Aktualisierung: ${db.lastUpdate ? new Date(db.lastUpdate).toLocaleString('de-DE') : 'N/A'}\n\n`;
+            text += '='.repeat(60) + '\n\n';
+
+            const playersWithStatsPromises = players.map(async (name) => ({
+                name: name,
+                stats: await getPlayerStats(name),
+                attempts: await getPlayerAttempts(name)
+            }));
+            const playersWithStats = await Promise.all(playersWithStatsPromises);
+
+            playersWithStats.sort((a, b) => {
+                if (a.stats.isComplete !== b.stats.isComplete) {
+                    return b.stats.isComplete ? 1 : -1;
+                }
+                return b.stats.bestScore - a.stats.bestScore;
+            });
+
+            playersWithStats.forEach((player, index) => {
+                text += `--- ${player.name} ---\n`;
+                text += `Status: ${player.stats.isComplete ? '✅ ABGESCHLOSSEN' : '⏳ IN BEARBEITUNG'}\n`;
+                text += `Versuche: ${player.stats.completedAttempts}/${player.stats.totalAttempts}\n`;
+                if (player.stats.abortedAttempts > 0) {
+                    text += `⚠️ Abgebrochen: ${player.stats.abortedAttempts}\n`;
+                }
+                text += `Bester Score: ${player.stats.bestScore > 0 ? player.stats.bestScore : 'N/A'}\n`;
+                text += `Durchschnitt: ${player.stats.averageScore > 0 ? player.stats.averageScore : 'N/A'}\n\n`;
+
+                if (player.attempts.length > 0) {
+                    text += 'Versuche im Detail:\n';
+                    player.attempts.forEach((attempt, i) => {
+                        text += `  Versuch ${i + 1}: `;
+                        if (attempt.completed) {
+                            text += `${attempt.score} Punkte`;
+                            if (attempt.timestamp) {
+                                text += ` (${new Date(attempt.timestamp).toLocaleString('de-DE')})`;
+                            }
+                        } else {
+                            text += `⚠️ ABGEBROCHEN`;
+                            if (attempt.score > 0) {
+                                text += ` - Score: ${attempt.score}`;
+                            }
+                            if (attempt.reason === 'hard_refresh') {
+                                text += ' (Hard Refresh)';
+                            }
+                            if (attempt.timestamp) {
+                                text += ` (${new Date(attempt.timestamp).toLocaleString('de-DE')})`;
+                            }
+                        }
+                        text += '\n';
+                    });
+                }
+
+                text += '\n' + '='.repeat(60) + '\n\n';
+            });
+
+            if (playersWithStats.filter(p => p.stats.isComplete).length > 0) {
+                const sortedByScore = playersWithStats
+                    .filter(p => p.stats.isComplete)
+                    .sort((a, b) => b.stats.bestScore - a.stats.bestScore);
+
+                text += '\n🏆 FINALE RANGLISTE\n';
+                text += '='.repeat(60) + '\n\n';
+                sortedByScore.forEach((player, index) => {
+                    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+                    text += `${index + 1}. ${medal} ${player.name}: ${player.stats.bestScore} Punkte (Ø ${player.stats.averageScore})\n`;
+                });
+            }
+
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const today = new Date().toISOString().split('T')[0];
+            a.download = `score_datenbank_${today}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+
+        displayScores();
+        
+        setInterval(() => {
+            refreshScores();
+        }, 5000);
+    </script>
+</body>
+</html>
